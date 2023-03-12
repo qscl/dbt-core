@@ -373,7 +373,25 @@ class ConfiguredParser(
 
     def parse_node(self, block: ConfiguredBlockType) -> FinalNode:
         compiled_path: str = self.get_compiled_path(block)
+
         fqn = self.get_fqn(compiled_path, block.name)
+
+        config: ContextConfig = self.initial_config(fqn)
+
+        node = self._create_parsetime_node(
+            block=block,
+            path=compiled_path,
+            config=config,
+            fqn=fqn,
+        )
+        self.render_update(node, config)
+        result = self.transform(node)
+        self.add_result_node(block, result)
+        return result
+
+    def parse_multi_nodes(self, block: ConfiguredBlockType) -> List[FinalNode]:
+        compiled_path: str = self.get_compiled_path(block)
+        base_fqn = self.get_fqn(compiled_path, block.name)
 
         config: ContextConfig = self.initial_config(fqn)
 
@@ -422,7 +440,11 @@ class SQLParser(
     ConfiguredParser[FileBlock, IntermediateNode, FinalNode], Generic[IntermediateNode, FinalNode]
 ):
     def parse_file(self, file_block: FileBlock) -> None:
-        self.parse_node(file_block)
+        print("PARSING", file_block.path.relative_path)
+        if file_block.path.relative_path.endswith(".qs"):
+            print("SKIPPING", file_block.path.relative_path)
+        else:
+            self.parse_node(file_block)
 
 
 class SimpleSQLParser(SQLParser[FinalNode, FinalNode]):

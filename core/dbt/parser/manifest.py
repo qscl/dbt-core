@@ -238,7 +238,7 @@ class ManifestLoader:
         if self.saved_manifest is not None:
             self.partial_parser = PartialParsing(self.saved_manifest, self.manifest.files)
             skip_parsing = self.partial_parser.skip_parsing()
-            if skip_parsing:
+            if skip_parsing:  # Disabling partial parsing to help with debugging
                 # nothing changed, so we don't need to generate project_parser_files
                 self.manifest = self.saved_manifest
             else:

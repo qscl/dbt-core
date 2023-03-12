@@ -244,6 +244,7 @@ class ModelParser(SimpleSQLParser[ModelNode]):
             )
 
     def render_update(self, node: ModelNode, config: ContextConfig) -> None:
+        node_before = {k: v for (k, v) in node.__dict__.items() if k != "manifest"}
         self.manifest._parsing_info.static_analysis_path_count += 1
 
         if node.language == ModelLanguage.python:
@@ -314,6 +315,7 @@ class ModelParser(SimpleSQLParser[ModelNode]):
             statically_parsed = self.run_experimental_parser(node)
         # run the stable static parser unless it is explicitly turned off
         else:
+            print("running static parser")
             statically_parsed = self.run_static_parser(node)
 
         # if the static parser succeeded, extract some data in easy-to-compare formats
@@ -374,6 +376,14 @@ class ModelParser(SimpleSQLParser[ModelNode]):
                 elif statically_parsed == "has_banned_macro":
                     result += ["88_has_banned_macro"]
 
+        node_after = {k: v for (k, v) in node.__dict__.items() if k != "manifest"}
+
+        for (k, v) in node_after.items():
+            if k not in node_before or node_before[k] != v:
+                print(f"node.{k} changed from {node_before[k]} to {v}")
+            else:
+                print(f"node.{k} stayed {v}")
+
         # only send the tracking event if there is at least one result code
         if result:
             # fire a tracking event. this fires one event for every sample
@@ -407,7 +417,7 @@ class ModelParser(SimpleSQLParser[ModelNode]):
         # if we want information on what features are barring the static
         # parser from reading model files, this is where we would add that
         # since that information is stored in the `ExtractionError`.
-        except ExtractionError:
+        except ExtractionError as e:
             fire_event(StaticParserFailure(path=node.path))
             return "cannot_parse"
 
